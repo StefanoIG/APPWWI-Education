@@ -8,6 +8,7 @@ import PeriodosTable from '../../components/admin/PeriodosTable';
 import Modal from '../../components/modal';
 import PeriodoForm from '../../components/forms/PeriodoForm';
 import { getApiUrl } from '../../Config';
+import { useNavigate } from 'react-router-dom';
 
 interface Periodo {
   id: number;
@@ -19,15 +20,46 @@ interface Periodo {
 function PeriodosPage() {
   const [periodos, setPeriodos] = useState<Periodo[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPeriodo, setSelectedPeriodo] = useState<Periodo | undefined>(undefined);
+  const [selectedPeriodo, setSelectedPeriodo] = useState<Periodo | null>(null);
+
+  const navigate = useNavigate();
+
+  // Obtener el token del localStorage
+  const token = localStorage.getItem('token');
+
+  // Configuración de axios con el token de autenticación
+  const axiosInstance = axios.create({
+    baseURL: getApiUrl(''),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   // Función para cargar datos de periodos desde la API
   const fetchPeriodos = async () => {
     try {
-      const response = await axios.get(getApiUrl('api/periodos'));
-      setPeriodos(response.data);
-    } catch (error) {
+      const response = await axiosInstance.get('/periodos');
+      console.log('Respuesta de periodos:', response.data);
+
+      // Extraer el array de periodos
+      const periodosArray = response.data.data || [];
+
+      // Transformar los datos para que las propiedades coincidan con tu interfaz
+      const transformedPeriodos = periodosArray.map((periodo: any) => ({
+        id: periodo.id,
+        nombre: periodo.nombre,
+        fechaInicio: periodo.fecha_inicio,
+        fechaFin: periodo.fecha_fin,
+      }));
+
+      setPeriodos(transformedPeriodos);
+    } catch (error: any) {
       console.error('Error al cargar los periodos:', error);
+      if (error.response && error.response.status === 401) {
+        // Redirigir al login si el token no es válido
+        navigate('/login');
+      }
     }
   };
 
@@ -49,24 +81,38 @@ function PeriodosPage() {
     try {
       if (data.id) {
         // Actualizar periodo existente
-        await axios.put(getApiUrl(`api/periodos/${data.id}`), data);
+        await axiosInstance.put(`/periodos/${data.id}`, {
+          nombre: data.nombre,
+          fecha_inicio: data.fechaInicio,
+          fecha_fin: data.fechaFin,
+        });
       } else {
         // Crear nuevo periodo
-        await axios.post(getApiUrl('api/periodos'), data);
+        await axiosInstance.post('/periodos', {
+          nombre: data.nombre,
+          fecha_inicio: data.fechaInicio,
+          fecha_fin: data.fechaFin,
+        });
       }
       setIsModalOpen(false);
       fetchPeriodos(); // Actualizar la lista de periodos
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar el periodo:', error);
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(getApiUrl(`api/periodos/${id}`));
+      await axiosInstance.delete(`/periodos/${id}`);
       fetchPeriodos(); // Actualizar la lista de periodos
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al eliminar el periodo:', error);
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
     }
   };
 

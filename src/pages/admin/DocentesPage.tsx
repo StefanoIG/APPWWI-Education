@@ -8,12 +8,13 @@ import UsuariosTable from '../../components/admin/UsuariosTable';
 import Modal from '../../components/modal';
 import UsuarioForm from '../../components/forms/UsuarioForm';
 import { getApiUrl } from '../../Config';
+import { useNavigate } from 'react-router-dom';
 
 interface Usuario {
-  id: number;
-  nombre: string;
-  apellido: string;
+  id?: number;
+  name: string;
   email: string;
+  // Otros campos si es necesario
 }
 
 function DocentesPage() {
@@ -21,13 +22,35 @@ function DocentesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
 
+  const navigate = useNavigate();
+
+  // Obtener el token del localStorage
+  const token = localStorage.getItem('token');
+
+  // Configuración de axios con el token de autenticación
+  const axiosInstance = axios.create({
+    baseURL: getApiUrl(''),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
   // Función para cargar datos de docentes desde la API
   const fetchDocentes = async () => {
     try {
-      const response = await axios.get(getApiUrl('api/usuarios/docentes'));
-      setDocentes(response.data);
-    } catch (error) {
+      const response = await axiosInstance.get('/docentes');
+      console.log('Respuesta de la API:', response.data);
+
+      // Extraer el array de docentes
+      const usuariosArray = response.data.data.data || [];
+      setDocentes(usuariosArray);
+    } catch (error: any) {
       console.error('Error al cargar los docentes:', error);
+      if (error.response && error.response.status === 401) {
+        // Redirigir al login si el token no es válido
+        navigate('/login');
+      }
     }
   };
 
@@ -49,30 +72,36 @@ function DocentesPage() {
     try {
       if (data.id) {
         // Actualizar docente existente
-        await axios.put(getApiUrl(`api/usuarios/${data.id}`), {
+        await axiosInstance.put(`/usuarios/${data.id}`, {
           ...data,
           rol_id: 2, // Docente
         });
       } else {
         // Crear nuevo docente
-        await axios.post(getApiUrl('api/usuarios'), {
+        await axiosInstance.post('/usuarios', {
           ...data,
           rol_id: 2, // Docente
         });
       }
       setIsModalOpen(false);
       fetchDocentes(); // Actualizar la lista de docentes
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar el docente:', error);
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(getApiUrl(`api/usuarios/${id}`));
+      await axiosInstance.delete(`/usuarios/${id}`);
       fetchDocentes();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al eliminar el docente:', error);
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
     }
   };
 

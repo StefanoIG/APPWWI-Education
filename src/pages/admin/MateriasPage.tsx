@@ -7,6 +7,8 @@ import Header from '../../components/admin/Header';
 import MateriasTable from '../../components/admin/MateriasTable';
 import Modal from '../../components/modal';
 import MateriaForm from '../../components/forms/MateriaForm';
+import { getApiUrl } from '../../Config';
+import { useNavigate } from 'react-router-dom';
 
 interface Materia {
   id: number;
@@ -17,23 +19,42 @@ interface Materia {
 
 function MateriasPage() {
   const [materias, setMaterias] = useState<Materia[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMateria, setSelectedMateria] = useState<Materia | null>(null);
+
+  const navigate = useNavigate();
+
+  // Obtener el token del localStorage
+  const token = localStorage.getItem('token');
+
+  // Configuración de axios con el token de autenticación
+  const axiosInstance = axios.create({
+    baseURL: getApiUrl(''),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   // Función para cargar datos de materias desde la API
   const fetchMaterias = async () => {
     try {
-      const response = await axios.get('http://tu-api.com/api/materias');
-      setMaterias(response.data);
-    } catch (error) {
+      const response = await axiosInstance.get('/materias');
+      // Ajustar según la estructura de tu respuesta
+      setMaterias(response.data.data || response.data);
+    } catch (error: any) {
       console.error('Error al cargar las materias:', error);
+      // Manejo de errores de autenticación
+      if (error.response && error.response.status === 401) {
+        // Redirigir al login si el token no es válido
+        navigate('/login');
+      }
     }
   };
 
   useEffect(() => {
     fetchMaterias();
   }, []);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedMateria, setSelectedMateria] = useState<Materia | null>(null);
 
   const handleCreate = () => {
     setSelectedMateria(null);
@@ -49,10 +70,10 @@ function MateriasPage() {
     try {
       if (data.id) {
         // Actualizar materia existente
-        await axios.put(`http://tu-api.com/api/materias/${data.id}`, data);
+        await axiosInstance.put(`/materias/${data.id}`, data);
       } else {
         // Crear nueva materia
-        await axios.post('http://tu-api.com/api/materias', data);
+        await axiosInstance.post('/materias', data);
       }
       setIsModalOpen(false);
       fetchMaterias(); // Actualizar la lista de materias
@@ -60,7 +81,6 @@ function MateriasPage() {
       console.error('Error al guardar la materia:', error);
     }
   };
-
 
   return (
     <div className="h-full w-full flex overflow-hidden antialiased text-gray-800 bg-white">

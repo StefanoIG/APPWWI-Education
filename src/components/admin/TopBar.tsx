@@ -1,6 +1,89 @@
-import React from 'react';
+// src/components/admin/TopBar.tsx
+import React, { useState } from 'react';
+import Modal from '../../components/modal'; // Ajusta la ruta si es necesario
+import MateriaForm from '../forms/MateriaForm';
+import UsuarioForm from '../forms/UsuarioForm';
+import axios from 'axios';
+import { getApiUrl } from '../../Config';
+import Swal from 'sweetalert2';
 
 function TopBar() {
+  // Estados para manejar el modal y la opción seleccionada
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+
+  // Obtener el token del localStorage
+  const token = localStorage.getItem('token');
+
+  // Configuración de axios con el token de autenticación
+  const axiosInstance = axios.create({
+    baseURL: getApiUrl(''),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // Estado para manejar el despliegue del menú
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Función para abrir el modal con la opción seleccionada
+  const handleOptionSelect = (option: string) => {
+    setSelectedOption(option);
+    setIsModalOpen(true);
+    setDropdownOpen(false); // Cerrar el menú desplegable
+  };
+
+  // Función para cerrar el modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedOption(null);
+  };
+
+  // Función para manejar el envío del formulario
+  const handleSubmit = async (data: any) => {
+    try {
+      let endpoint = '';
+      let requestData = data;
+
+      switch (selectedOption) {
+        case 'Materia':
+          endpoint = '/materias';
+          break;
+        case 'Docente':
+          endpoint = '/usuarios';
+          requestData = { ...data, rol: 'docente' };
+          break;
+        case 'Estudiante':
+          endpoint = '/usuarios';
+          requestData = { ...data, rol: 'estudiante' };
+          break;
+        default:
+          return;
+      }
+
+      // Enviar la solicitud al backend
+      await axiosInstance.post(endpoint, requestData);
+
+      
+      // Mostrar notificación de éxito con SweetAlert2
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: 'La operación se completó correctamente',
+      });
+
+      // Cerrar el modal
+      closeModal();
+
+      // Opcional: Actualizar los datos en el componente padre si es necesario
+    } catch (error) {
+      console.error('Error al agregar:', error);
+      // Mostrar notificación de error (opcional)
+      // ...
+    }
+  };
+
   return (
     <nav
       aria-label="top bar"
@@ -9,10 +92,11 @@ function TopBar() {
       {/* Barra superior izquierda */}
       <ul aria-label="top bar left" className="flex">
         {/* Botón agregar */}
-        <li className="group relative">
+        <li className="relative">
           <button
             aria-haspopup="listbox"
             className="flex items-center h-full px-4 text-sm"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             <i>
               <svg
@@ -25,89 +109,67 @@ function TopBar() {
             </i>
             <span className="ml-2">Agregar</span>
           </button>
-          <span className="absolute p-1 hidden group-hover:block">
-            <ul
-              role="listbox"
-              className="outline-none py-2 bg-white border rounded-md w-screen max-w-md shadow-lg leading-relaxed"
-            >
-              <li
-                role="option"
-                className="px-6 py-1 my-1 hover:bg-blue-100 cursor-pointer"
+          {dropdownOpen && (
+            <div className="absolute mt-2 p-1 bg-white border rounded-md shadow-lg">
+              <ul
+                role="listbox"
+                className="outline-none py-2 w-40 leading-relaxed"
               >
-                Materia
-              </li>
-              <li
-                role="option"
-                className="px-6 py-1 my-1 hover:bg-blue-100 cursor-pointer"
-              >
-                Docente
-              </li>
-              <li
-                role="option"
-                className="px-6 py-1 my-1 hover:bg-blue-100 cursor-pointer"
-              >
-                Estudiante
-              </li>
-              {/* Agrega más opciones si es necesario */}
-            </ul>
-          </span>
+                <li
+                  role="option"
+                  className="px-6 py-1 my-1 hover:bg-blue-100 cursor-pointer"
+                  onClick={() => handleOptionSelect('Materia')}
+                >
+                  Materia
+                </li>
+                <li
+                  role="option"
+                  className="px-6 py-1 my-1 hover:bg-blue-100 cursor-pointer"
+                  onClick={() => handleOptionSelect('Docente')}
+                >
+                  Docente
+                </li>
+                <li
+                  role="option"
+                  className="px-6 py-1 my-1 hover:bg-blue-100 cursor-pointer"
+                  onClick={() => handleOptionSelect('Estudiante')}
+                >
+                  Estudiante
+                </li>
+                {/* Agrega más opciones si es necesario */}
+              </ul>
+            </div>
+          )}
         </li>
       </ul>
 
       {/* Barra superior derecha */}
-      <ul aria-label="top bar right" className="px-8 flex items-center">
-        {/* Campo de búsqueda */}
-        <li className="relative">
-          <input
-            aria-label="search bar"
-            role="search"
-            className="pr-8 pl-4 py-2 rounded-md cursor-pointer transition-all duration-300 ease-in-out focus:border-black focus:cursor-text w-4 focus:w-64 placeholder-transparent focus:placeholder-gray-500"
-            type="text"
-            placeholder="Buscar..."
-          />
-          <i className="pointer-events-none absolute top-0 right-0 h-full flex items-center pr-3">
-            <svg
-              className="fill-current w-4 h-4 mx-auto"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-            >
-              <path d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z" />
-            </svg>
-          </i>
-        </li>
+      {/* ... (resto del código de la barra superior derecha) */}
 
-        {/* Notificaciones */}
-        <li className="h-8 w-8 ml-3">
-          <button
-            aria-label="notifications"
-            className="w-full h-full text-white bg-gray-600 rounded-md focus:outline-none focus:shadow-outline"
-          >
-            <i>
-              <svg
-                className="fill-current w-4 h-4 mx-auto"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-              >
-                <path d="M15.137 3.945c-.644-.374-1.042-1.07-1.041-1.82v-.003c.001-1.172-.938-2.122-2.096-2.122s-2.097.95-2.097 2.122v.003c.001.751-.396 1.446-1.041 1.82-4.667 2.712-1.985 11.715-6.862 13.306v1.749h20v-1.749c-4.877-1.591-2.195-10.594-6.863-13.306zm-3.137-2.945c.552 0 1 .449 1 1 0 .552-.448 1-1 1s-1-.448-1-1c0-.551.448-1 1-1zm3 20c0 1.598-1.392 3-2.971 3s-3.029-1.402-3.029-3h6z" />
-              </svg>
-            </i>
-          </button>
-        </li>
-
-        {/* Perfil de usuario */}
-        <li className="h-10 w-10 ml-3">
-          <button
-            aria-label="perfil"
-            className="h-full w-full rounded-full border focus:outline-none focus:shadow-outline"
-          >
-            <img
-              className="h-full w-full rounded-full mx-auto"
-              src="ruta/de/imagen/usuario.jpg"
-              alt="Usuario"
-            />
-          </button>
-        </li>
-      </ul>
+      {/* Modal */}
+      {isModalOpen && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          title={
+            selectedOption === 'Materia'
+              ? 'Nueva Materia'
+              : selectedOption === 'Docente'
+              ? 'Nuevo Docente'
+              : 'Nuevo Estudiante'
+          }
+        >
+          {selectedOption === 'Materia' && (
+            <MateriaForm initialData={null} onSubmit={handleSubmit} />
+          )}
+          {selectedOption === 'Docente' && (
+            <UsuarioForm initialData={null} onSubmit={handleSubmit} />
+          )}
+          {selectedOption === 'Estudiante' && (
+            <UsuarioForm initialData={null} onSubmit={handleSubmit} />
+          )}
+        </Modal>
+      )}
     </nav>
   );
 }

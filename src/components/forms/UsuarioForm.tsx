@@ -3,11 +3,10 @@ import React, { useState } from 'react';
 
 interface Usuario {
   id?: number;
-  nombre: string;
-  apellido: string;
+  name: string;
   email: string;
   password?: string;
-  carrera?: string; // Campo adicional para estudiantes
+  password_confirmation?: string;
 }
 
 interface UsuarioFormProps {
@@ -21,22 +20,20 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({
   onSubmit,
   rol_id,
 }) => {
-  const [nombre, setNombre] = useState(initialData?.nombre || '');
-  const [apellido, setApellido] = useState(initialData?.apellido || '');
+  const [name, setName] = useState(initialData?.name || '');
   const [email, setEmail] = useState(initialData?.email || '');
   const [password, setPassword] = useState('');
-  const [carrera, setCarrera] = useState(initialData?.carrera || '');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validar y enviar los datos
     const data: Usuario = {
       id: initialData?.id,
-      nombre,
-      apellido,
+      name,
       email,
       password: password || undefined,
-      carrera: rol_id === 3 ? carrera : undefined, // Solo para estudiantes
+      password_confirmation: passwordConfirmation || undefined,
     };
     onSubmit(data);
   };
@@ -47,18 +44,10 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({
         <label>Nombre</label>
         <input
           type="text"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="w-full border rounded p-2 mb-4"
-        />
-      </div>
-      <div>
-        <label>Apellido</label>
-        <input
-          type="text"
-          value={apellido}
-          onChange={(e) => setApellido(e.target.value)}
-          className="w-full border rounded p-2 mb-4"
+          required
         />
       </div>
       <div>
@@ -68,29 +57,32 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border rounded p-2 mb-4"
+          required
         />
       </div>
       {!initialData && (
-        <div>
-          <label>Contraseña</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded p-2 mb-4"
-          />
-        </div>
-      )}
-      {rol_id === 3 && (
-        <div>
-          <label>Carrera</label>
-          <input
-            type="text"
-            value={carrera}
-            onChange={(e) => setCarrera(e.target.value)}
-            className="w-full border rounded p-2 mb-4"
-          />
-        </div>
+        <>
+          <div>
+            <label>Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border rounded p-2 mb-4"
+              required
+            />
+          </div>
+          <div>
+            <label>Confirmar Contraseña</label>
+            <input
+              type="password"
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
+              className="w-full border rounded p-2 mb-4"
+              required
+            />
+          </div>
+        </>
       )}
       <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
         {initialData ? 'Actualizar' : 'Crear'}
