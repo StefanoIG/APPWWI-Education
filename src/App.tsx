@@ -13,6 +13,9 @@ import Dashboard from './pages/admin/admin';
 import AsignacionesPage from './pages/admin/AsignacionesPage';
 import EstudiantesPage from './pages/admin/EstudiantePage';
 import PeriodosPage from './pages/admin/PeriodosPage';
+import MateriasUserPage from './pages/users/MateriasPage';
+import TareasPage from './pages/users/MateriaUniquePage';
+import DetalleTareaPage from './pages/users/HomeworkPage';
 
 function App() {
   return (
@@ -59,7 +62,9 @@ function App() {
         <Route path="/admin/asignaciones" element={<AsignacionesPage />} />
         <Route path="/admin/estudiantes" element={<EstudiantesPage />} />
         <Route path="/admin/periodos" element={<PeriodosPage />} />
-
+        <Route path='/materias' element={<MateriasUserPage/>}/>
+        <Route path='/tareas' element={<TareasPage/>}/>
+        <Route path='/tareas/:id' element={<DetalleTareaPage/>}/>
         {/* Ruta para manejar rutas no encontradas */}
         <Route
           path="*"

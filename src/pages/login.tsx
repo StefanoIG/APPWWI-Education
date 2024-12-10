@@ -41,10 +41,11 @@ const Login: React.FC = () => {
       );
 
       // Obtener el token del backend
-      const { token } = response.data;
+      const { token, rol } = response.data;
 
       // Guardar el token en el almacenamiento local
       localStorage.setItem('token', token);
+      localStorage.setItem('rol', rol);
 
       // Mostrar notificación de éxito
       MySwal.fire({
@@ -57,8 +58,12 @@ const Login: React.FC = () => {
         timerProgressBar: true,
       });
 
-      // Redirigir al panel de administración
-      navigate('/admin');
+      // Redirigir según el rol
+      if (rol === 'Admin') {
+        navigate('/admin');
+      } else {
+        navigate('/materias');
+      }
     } catch (error: any) {
       // Manejo de errores
       console.error('Error al iniciar sesión:', error);
