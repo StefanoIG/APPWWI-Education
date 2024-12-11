@@ -1,86 +1,78 @@
-// src/pages/admin/MateriasPage.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Sidebar from '../../components/admin/SideBar';
 import TopBar from '../../components/admin/TopBar';
 import Header from '../../components/admin/Header';
+import { getApiUrl } from '../../Config';
 
 function MateriasPage() {
-  // Datos quemados
-  const materias = [
-    {
-      id: 1,
-      nombre: 'Aplicaciones Web II',
-      carrera: 'Tecnologías de la Información 2024-AS',
-      completado: '25%',
+  const navigate = useNavigate();
+  const [materias, setMaterias] = useState([]);
+  const token = localStorage.getItem('token');
+
+  const axiosInstance = axios.create({
+    baseURL: getApiUrl(''),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
-    {
-      id: 2,
-      nombre: 'Minería de Datos',
-      carrera: 'Tecnologías de la Información 2024-AS',
-      completado: '15%',
-    },
-    {
-      id: 3,
-      nombre: 'Prácticas Laborales I',
-      carrera: 'Tecnologías de la Información 2024-AS',
-      completado: '35%',
-    },
-    {
-      id: 4,
-      nombre: 'Seguridad de la Información',
-      carrera: 'Tecnologías de la Información 2024-AS',
-      completado: '40%',
-    },
-    {
-      id: 5,
-      nombre: 'Ingeniería de Software II',
-      carrera: 'Tecnologías de la Información 2024-AS',
-      completado: '44%',
-    },
-    {
-      id: 6,
-      nombre: 'Tecnologías de Conmutación y Enrutamiento',
-      carrera: 'Tecnologías de la Información 2024-AS',
-      completado: '30%',
-    },
-  ];
+  });
+
+  const fetchMaterias = async () => {
+    try {
+      const response = await axiosInstance.get('/materias');
+      setMaterias(response.data.data || response.data);
+    } catch (error) {
+      console.error('Error al cargar las materias:', error);
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterias();
+  }, []);
+
+  const handleVerMas = (materiaId) => {
+    localStorage.setItem('materiaId', materiaId); // Guardar el ID de la materia
+    navigate('/tareas'); // Redirigir a la página de tareas
+  };
 
   return (
     <div className="h-full w-full flex overflow-hidden antialiased text-gray-800 bg-white">
-      {/* Menú lateral */}
       <Sidebar activeItem={'Materias'} />
-
       <div className="flex-1 flex flex-col">
-        {/* Barra superior */}
         <TopBar />
-
-        {/* Encabezado de contenido */}
         <Header title="Materias" />
-
-        {/* Contenido principal */}
         <main className="flex-grow flex flex-col min-h-0 border-t">
           <section aria-label="main content" className="p-6">
             <h2 className="text-2xl font-semibold mb-4">Lista de Materias</h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {materias.map((materia) => (
-                <div
-                  key={materia.id}
-                  className="border rounded-lg p-4 bg-gray-100 shadow-md"
-                >
-                  <h3 className="text-lg font-bold">{materia.nombre}</h3>
-                  <p className="text-sm text-gray-600">{materia.carrera}</p>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Progreso: {materia.completado}
-                  </p>
-                  <button
-                    className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+            {materias.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {materias.map((materia) => (
+                  <div
+                    key={materia.id}
+                    className="border rounded-lg p-4 bg-gray-100 shadow-md"
                   >
-                    Ver más
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <h3 className="text-lg font-bold">{materia.nombre}</h3>
+                    <p className="text-sm text-gray-600">{materia.carrera}</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Progreso: {materia.completado}
+                    </p>
+                    <button
+                      className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                      onClick={() => handleVerMas(materia.id)}
+                    >
+                      Ver más
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600">No hay materias disponibles.</p>
+            )}
           </section>
         </main>
       </div>

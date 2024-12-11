@@ -16,6 +16,8 @@ import PeriodosPage from './pages/admin/PeriodosPage';
 import MateriasUserPage from './pages/users/MateriasPage';
 import TareasPage from './pages/users/MateriaUniquePage';
 import DetalleTareaPage from './pages/users/HomeworkPage';
+import CrearTareaPage from './pages/users/ActivityPage';
+
 
 function App() {
   return (
@@ -65,6 +67,9 @@ function App() {
         <Route path='/materias' element={<MateriasUserPage/>}/>
         <Route path='/tareas' element={<TareasPage/>}/>
         <Route path='/tareas/:id' element={<DetalleTareaPage/>}/>
+        <Route path='/tareas/agregar' element={<CrearTareaPage/>}/>
+
+
         {/* Ruta para manejar rutas no encontradas */}
         <Route
           path="*"
