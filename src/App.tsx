@@ -17,6 +17,7 @@ import MateriasUserPage from './pages/users/MateriasPage';
 import TareasPage from './pages/users/MateriaUniquePage';
 import DetalleTareaPage from './pages/users/HomeworkPage';
 import CrearTareaPage from './pages/users/ActivityPage';
+import CalificarTareaPage from './pages/users/CalificarTareaPage';
 
 
 function App() {
@@ -68,6 +69,7 @@ function App() {
         <Route path='/tareas' element={<TareasPage/>}/>
         <Route path='/tareas/:id' element={<DetalleTareaPage/>}/>
         <Route path='/tareas/agregar' element={<CrearTareaPage/>}/>
+        <Route path="/calificar/:id" element={<CalificarTareaPage />} />
 
 
         {/* Ruta para manejar rutas no encontradas */}

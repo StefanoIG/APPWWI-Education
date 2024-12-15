@@ -60,7 +60,7 @@ function DetalleTareaPage() {
         <textarea id="descripcion" class="swal2-textarea mb-3">${tarea.descripcion || ''}</textarea>
       
         <label class="block mb-2 text-gray-600">Fecha de Entrega</label>
-        <input type="date" id="fecha_entrega" class="swal2-input mb-3" value="${tarea.fecha_entrega || ''}" />
+        <input type="date" id="fecha_entrega" class="swal2-input mb-3" min="${new Date().toISOString().split('T')[0]}" value="${tarea.fecha_entrega || ''}" />
         
         <label class="hidden">Curso ID</label>
         <input id="curso_id" class="hidden" value="${tarea.curso_id || ''}" />
@@ -71,7 +71,6 @@ function DetalleTareaPage() {
       confirmButtonText: 'Guardar Cambios',
       showCancelButton: true,
       preConfirm: () => {
-        // Accede a los elementos correctamente usando Swal.getPopup()
         const popup = Swal.getPopup();
         const titulo = (popup.querySelector('#titulo') as HTMLInputElement)?.value.trim();
         const descripcion = (popup.querySelector('#descripcion') as HTMLTextAreaElement)?.value.trim();
@@ -79,7 +78,6 @@ function DetalleTareaPage() {
         const curso_id = (popup.querySelector('#curso_id') as HTMLInputElement)?.value.trim();
         const archivo = (popup.querySelector('#archivo') as HTMLInputElement)?.files?.[0];
 
-        // Validación
         if (!titulo || !descripcion || !fecha_entrega || !curso_id) {
           Swal.showValidationMessage('Todos los campos son obligatorios');
           return false;
@@ -90,8 +88,6 @@ function DetalleTareaPage() {
     }).then(async (result) => {
       if (result.isConfirmed && result.value) {
         const { titulo, descripcion, fecha_entrega, curso_id, archivo } = result.value;
-
-        // Crear un nuevo FormData
         const formDataTest = new FormData();
         formDataTest.append('titulo', titulo);
         formDataTest.append('descripcion', descripcion);
@@ -100,11 +96,6 @@ function DetalleTareaPage() {
 
         if (archivo) {
           formDataTest.append('archivo', archivo);
-        }
-
-        // Verificar lo que contiene el FormData
-        for (let pair of formDataTest.entries()) {
-          console.log(pair[0] + ':', pair[1]);
         }
 
         try {
@@ -120,6 +111,9 @@ function DetalleTareaPage() {
   };
 
 
+  const handleCalificar = (tareaId) => {
+    window.location.href = `/calificar/${tareaId}`;
+  };
 
 
   if (!tarea) {
@@ -129,6 +123,8 @@ function DetalleTareaPage() {
   return (
     <div>
       <Navbar />
+      <br />
+      <br />
       <div className="flex justify-center bg-gray-100 min-h-screen p-6">
         <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6">
           <h2 className="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">
@@ -147,12 +143,20 @@ function DetalleTareaPage() {
           </div>
 
           {rol === 'profesor' ? (
-            <button
-              onClick={handleEdit}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded focus:outline-none"
-            >
-              Editar Tarea
-            </button>
+            <div className="flex space-x-4">
+              <button
+                onClick={handleEdit}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded focus:outline-none"
+              >
+                Editar Tarea
+              </button>
+              <button
+                onClick={() => handleCalificar(tarea.id)}
+                className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded focus:outline-none"
+              >
+                Calificar
+              </button>
+            </div>
           ) : (
             <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
               <h3 className="text-lg font-semibold mb-4">Entrega de Tarea</h3>
@@ -181,8 +185,6 @@ function DetalleTareaPage() {
         </div>
       </div>
     </div>
-
-
   );
 }
 
