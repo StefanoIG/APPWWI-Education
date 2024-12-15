@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../../components/admin/SideBar';
-import TopBar from '../../components/admin/TopBar';
-import Header from '../../components/admin/Header';
+import Navbar from '../../components/navbar';
 import { getApiUrl } from '../../Config';
 
 function CrearTareaPage() {
@@ -67,10 +65,10 @@ function CrearTareaPage() {
 
     return (
         <div className="h-full w-full flex overflow-hidden antialiased text-gray-800 bg-white">
-            <Sidebar activeItem={'Tareas'} />
             <div className="flex-1 flex flex-col">
-                <TopBar />
-                <Header title="Crear Tarea" />
+                <Navbar />
+                <br />
+                <br />
                 <main className="flex-grow flex flex-col min-h-0 border-t">
                     <section aria-label="main content" className="p-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
