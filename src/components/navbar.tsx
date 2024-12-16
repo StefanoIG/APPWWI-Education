@@ -3,6 +3,13 @@ import React from 'react';
 const Navbar: React.FC = () => {
   const rol = localStorage.getItem('rol'); // Obtener el rol desde localStorage
 
+  //funcion de logut elimina todo lo que haya en el localstorage
+  const logout = () => {
+    localStorage.clear();
+    window.location.href = '/';
+  };
+
+
   return (
     <div className="fixed top-0 left-0 w-full z-50 bg-white border-b backdrop-blur-lg bg-opacity-80">
       <div className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8">
@@ -25,21 +32,21 @@ const Navbar: React.FC = () => {
                 {/* Opciones cuando hay rol */}
                 <a
                   className="text-gray-700 hover:text-indigo-700 text-sm font-medium"
-                  href="/inicio"
+                  href="/"
                 >
                   Inicio
                 </a>
                 <a
                   className="text-gray-700 hover:text-indigo-700 text-sm font-medium"
-                  href="/cursos"
+                  href="/materias"
                 >
                   Cursos
                 </a>
                 <a
-                  className="text-gray-700 hover:text-indigo-700 text-sm font-medium"
-                  href="/perfil"
+                  className="text-gray-700 hover:text-indigo-700 text-sm font-medium cursor-pointer"
+                  onClick={logout}
                 >
-                  Perfil
+                  Cerrar sesion
                 </a>
               </>
             ) : (

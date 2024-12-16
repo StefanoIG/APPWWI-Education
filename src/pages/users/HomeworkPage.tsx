@@ -9,8 +9,11 @@ function DetalleTareaPage() {
   const { id } = useParams();
   const [tarea, setTarea] = useState(null);
   const [entrega, setEntrega] = useState({ comentarios: '', archivo: null });
+  const [entregaExistente, setEntregaExistente] = useState(null); // Guardará los datos de la entrega
   const [rol] = useState(localStorage.getItem('rol'));
   const token = localStorage.getItem('token');
+  const estudianteId = localStorage.getItem('id_estudiante');
+  const [editMode, setEditMode] = useState(false); // Controla el modo de edición
 
   const axiosInstance = axios.create({
     baseURL: getApiUrl(''),
@@ -21,6 +24,9 @@ function DetalleTareaPage() {
 
   useEffect(() => {
     fetchTarea();
+    if (rol === 'estudiante') {
+      verificarEntrega();
+    }
   }, [id]);
 
   const fetchTarea = async () => {
@@ -32,89 +38,64 @@ function DetalleTareaPage() {
     }
   };
 
+  const verificarEntrega = async () => {
+    try {
+      const entregaResponse = await axiosInstance.get(`/entregas/${id}`);
+      // Accede al primer elemento del array
+      setEntregaExistente(entregaResponse.data.data[0]);
+      console.log('Entrega:', entregaExistente);
+    } catch (error) {
+      console.error('Error al verificar la entrega:', error);
+    }
+  };
+
   const handleFileChange = (e) => {
     setEntrega({ ...entrega, archivo: e.target.files[0] });
+  };
+
+  const handleEditEntrega = async () => {
+    const formData = new FormData();
+    formData.append('comentarios', entregaExistente.comentarios);
+    if (entrega.archivo) formData.append('archivo', entrega.archivo);
+
+    try {
+      await axiosInstance.put(`/entregas/${entregaExistente.id}`, formData);
+      Swal.fire('Éxito', 'Entrega actualizada con éxito', 'success');
+      verificarEntrega(); // Refrescar estado
+      setEditMode(false); // Salir del modo de edición
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo actualizar la entrega', 'error');
+    }
   };
 
   const handleSubmitEntrega = async () => {
     const formData = new FormData();
     formData.append('comentarios', entrega.comentarios);
-    if (entrega.archivo) formData.append('archivo', entrega.archivo);
+    formData.append('archivo', entrega.archivo);
 
     try {
-      await axiosInstance.post(`/tareas/entregar/${id}`, formData);
+      await axiosInstance.post(`/entregas/${id}`, formData);
       Swal.fire('Éxito', 'Entrega realizada con éxito', 'success');
+      verificarEntrega(); // Refrescar estado
     } catch (error) {
-      Swal.fire('Error', 'No se pudo entregar la tarea', 'error');
+      Swal.fire('Error', 'No se pudo realizar la entrega', 'error');
     }
   };
 
-  const handleEdit = () => {
-    Swal.fire({
-      title: 'Editar Tarea',
-      html: `
-        <label class="block mb-2 text-gray-600">Título</label>
-        <input id="titulo" class="swal2-input mb-3" value="${tarea.titulo || ''}" />
-      
-        <label class="block mb-2 text-gray-600">Descripción</label>
-        <textarea id="descripcion" class="swal2-textarea mb-3">${tarea.descripcion || ''}</textarea>
-      
-        <label class="block mb-2 text-gray-600">Fecha de Entrega</label>
-        <input type="date" id="fecha_entrega" class="swal2-input mb-3" min="${new Date().toISOString().split('T')[0]}" value="${tarea.fecha_entrega || ''}" />
-        
-        <label class="hidden">Curso ID</label>
-        <input id="curso_id" class="hidden" value="${tarea.curso_id || ''}" />
-        
-        <label class="block mb-2 text-gray-600">Subir Archivo</label>
-        <input type="file" id="archivo" class="swal2-input" />
-      `,
-      confirmButtonText: 'Guardar Cambios',
-      showCancelButton: true,
-      preConfirm: () => {
-        const popup = Swal.getPopup();
-        const titulo = (popup.querySelector('#titulo') as HTMLInputElement)?.value.trim();
-        const descripcion = (popup.querySelector('#descripcion') as HTMLTextAreaElement)?.value.trim();
-        const fecha_entrega = (popup.querySelector('#fecha_entrega') as HTMLInputElement)?.value;
-        const curso_id = (popup.querySelector('#curso_id') as HTMLInputElement)?.value.trim();
-        const archivo = (popup.querySelector('#archivo') as HTMLInputElement)?.files?.[0];
-
-        if (!titulo || !descripcion || !fecha_entrega || !curso_id) {
-          Swal.showValidationMessage('Todos los campos son obligatorios');
-          return false;
-        }
-
-        return { titulo, descripcion, fecha_entrega, curso_id, archivo };
-      },
-    }).then(async (result) => {
-      if (result.isConfirmed && result.value) {
-        const { titulo, descripcion, fecha_entrega, curso_id, archivo } = result.value;
-        const formDataTest = new FormData();
-        formDataTest.append('titulo', titulo);
-        formDataTest.append('descripcion', descripcion);
-        formDataTest.append('fecha_entrega', fecha_entrega);
-        formDataTest.append('curso_id', curso_id);
-
-        if (archivo) {
-          formDataTest.append('archivo', archivo);
-        }
-
-        try {
-          await axiosInstance.put(`/tareas/${tarea.id}`, formDataTest);
-          Swal.fire('Actualizado', 'La tarea ha sido editada', 'success');
-          fetchTarea();
-        } catch (error) {
-          console.error('Error en PUT:', error);
-          Swal.fire('Error', 'No se pudo editar la tarea', 'error');
-        }
-      }
-    });
+  const handleDeleteEntrega = async () => {
+    try {
+      await axiosInstance.delete(`/entregas/${entregaExistente.id}`);
+      Swal.fire('Éxito', 'Entrega eliminada con éxito', 'success');
+      setEntregaExistente(null); // Limpia el estado de la entrega
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo eliminar la entrega', 'error');
+    }
   };
 
-
-  const handleCalificar = (tareaId) => {
-    window.location.href = `/calificar/${tareaId}`;
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEntrega({ comentarios: '', archivo: null }); // Reinicia inputs
   };
-
 
   if (!tarea) {
     return <div className="text-center mt-10 text-lg">Cargando...</div>;
@@ -142,45 +123,103 @@ function DetalleTareaPage() {
             </p>
           </div>
 
-          {rol === 'profesor' ? (
-            <div className="flex space-x-4">
-              <button
-                onClick={handleEdit}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded focus:outline-none"
-              >
-                Editar Tarea
-              </button>
-              <button
-                onClick={() => handleCalificar(tarea.id)}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded focus:outline-none"
-              >
-                Calificar
-              </button>
-            </div>
-          ) : (
-            <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
-              <h3 className="text-lg font-semibold mb-4">Entrega de Tarea</h3>
-              <textarea
-                value={entrega.comentarios}
-                onChange={(e) =>
-                  setEntrega({ ...entrega, comentarios: e.target.value })
-                }
-                className="w-full h-24 border rounded-lg px-3 py-2 mb-4"
-                placeholder="Comentarios de entrega..."
-              />
-              <input
-                type="file"
-                onChange={handleFileChange}
-                className="w-full text-sm text-gray-500 border rounded-lg px-3 py-2 mb-4"
-                accept=".pdf,.docx,.txt"
-              />
-              <button
-                onClick={handleSubmitEntrega}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-              >
-                Subir Tarea
-              </button>
-            </div>
+          {rol === 'estudiante' && (
+            entregaExistente ? (
+              <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+                {entregaExistente.calificacion ? (
+                  // Si tiene calificación, deshabilitamos todos los inputs y ocultamos botones
+                  <>
+                    <h3 className="text-lg font-semibold mb-4">Entrega Calificada</h3>
+                    <textarea
+                      value={entregaExistente.comentarios}
+                      disabled
+                      className="w-full h-24 border rounded-lg px-3 py-2 mb-4"
+                    />
+                    <p className="text-gray-700">
+                      <strong>Calificación: </strong>{entregaExistente.calificacion}
+                    </p>
+                  </>
+                ) : (
+                  // Si no tiene calificación
+                  <>
+                    <h3 className="text-lg font-semibold mb-4">Editar o Eliminar Entrega</h3>
+                    <textarea
+                      value={entregaExistente.comentarios}
+                      onChange={(e) =>
+                        setEntregaExistente({ ...entregaExistente, comentarios: e.target.value })
+                      }
+                      disabled={!editMode}
+                      className="w-full h-24 border rounded-lg px-3 py-2 mb-4"
+                    />
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-gray-500 border rounded-lg px-3 py-2 mb-4"
+                      accept=".pdf,.docx,.txt"
+                      disabled={!editMode}
+                    />
+                    <div className="flex space-x-4">
+                      {editMode ? (
+                        <>
+                          <button
+                            onClick={handleEditEntrega}
+                            className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                          >
+                            Guardar Cambios
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setEditMode(true)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={handleDeleteEntrega}
+                            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              // Si no existe una entrega, permite crearla
+              <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <h3 className="text-lg font-semibold mb-4">Entrega de Tarea</h3>
+                <textarea
+                  value={entrega.comentarios}
+                  onChange={(e) =>
+                    setEntrega({ ...entrega, comentarios: e.target.value })
+                  }
+                  className="w-full h-24 border rounded-lg px-3 py-2 mb-4"
+                  placeholder="Comentarios de entrega..."
+                />
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-gray-500 border rounded-lg px-3 py-2 mb-4"
+                  accept=".pdf,.docx,.txt"
+                />
+                <button
+                  onClick={handleSubmitEntrega}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                >
+                  Subir Tarea
+                </button>
+              </div>
+            )
           )}
         </div>
       </div>

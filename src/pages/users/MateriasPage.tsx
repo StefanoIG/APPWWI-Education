@@ -56,10 +56,9 @@ function MateriasPage() {
                     className="border rounded-lg p-4 bg-gray-100 shadow-md"
                   >
                     <h3 className="text-lg font-bold">{materia.nombre}</h3>
-                    <p className="text-sm text-gray-600">{materia.carrera}</p>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Progreso: {materia.completado}
-                    </p>
+                    <p className="text-sm text-gray-600"><strong>Nivel: </strong>{materia.nivel}</p>
+                    <p className="text-sm text-gray-600"><strong>Descripcion: </strong>{materia.descripcion}</p>
+
                     <button
                       className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
                       onClick={() => handleVerMas(materia.id)}

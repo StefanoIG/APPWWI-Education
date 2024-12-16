@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Navbar from '../../components/navbar';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -9,6 +9,7 @@ function CalificarTareaPage() {
   const { id } = useParams(); // ID de la tarea
   const [entregas, setEntregas] = useState([]); // Lista de entregas
   const [notas, setNotas] = useState({}); // Estado para almacenar las notas
+  const [editable, setEditable] = useState({}); // Controla qué inputs son editables
   const token = localStorage.getItem('token');
 
   const axiosInstance = axios.create({
@@ -22,9 +23,23 @@ function CalificarTareaPage() {
     try {
       const response = await axiosInstance.get(`/tarea/${id}/entregas`);
       setEntregas(response.data);
+
+      // Inicializar estados
+      const initialNotas = response.data.reduce((acc, entrega) => {
+        if (entrega.calificacion !== null) acc[entrega.id] = entrega.calificacion;
+        return acc;
+      }, {});
+
+      const initialEditable = response.data.reduce((acc, entrega) => {
+        acc[entrega.id] = entrega.calificacion === null; // Editable si no tiene calificación
+        return acc;
+      }, {});
+
+      setNotas(initialNotas);
+      setEditable(initialEditable);
     } catch (error) {
-      console.error('Error al obtener entregas:', error);
-      Swal.fire('Error', 'No se pudieron cargar las entregas', 'error');
+      console.error('No hay entregas:', error);
+      Swal.fire('Info', 'No hay entregas', 'info');
     }
   };
 
@@ -32,22 +47,46 @@ function CalificarTareaPage() {
     fetchEntregas();
   }, [id]);
 
-  const handleNotaChange = (estudianteId, nota) => {
-    setNotas((prevNotas) => ({ ...prevNotas, [estudianteId]: nota }));
+  const handleNotaChange = (entregaId, nota) => {
+    setNotas((prevNotas) => ({ ...prevNotas, [entregaId]: nota }));
+  };
+
+  const handleEditarNota = (entregaId) => {
+    setEditable((prevEditable) => ({ ...prevEditable, [entregaId]: true }));
   };
 
   const handleGuardarNotas = async () => {
     try {
-      const payload = Object.entries(notas).map(([estudianteId, nota]) => ({
-        estudiante_id: estudianteId,
-        nota: parseFloat(nota),
+      const payload = Object.entries(notas).map(([entregaId, calificacion]) => ({
+        id: entregaId,
+        calificacion: parseFloat(calificacion),
       }));
 
-      await axiosInstance.post(`/entrega/calificar/${id}`, { calificaciones: payload });
+      await axiosInstance.put(`/entrega/calificar/${id}`, { calificaciones: payload });
       Swal.fire('Éxito', 'Las notas fueron guardadas exitosamente', 'success');
+      fetchEntregas(); // Refrescar entregas tras guardar notas
     } catch (error) {
       console.error('Error al guardar las calificaciones:', error);
       Swal.fire('Error', 'No se pudieron guardar las notas', 'error');
+    }
+  };
+
+  const handleDownload = async (archivo) => {
+    try {
+      const response = await axiosInstance.get(`/entrega/descargar/${archivo.replace('entregas/', '')}`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', archivo.replace('entregas/', ''));
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error al descargar el archivo:', error);
+      Swal.fire('Error', 'No se pudo descargar el archivo', 'error');
     }
   };
 
@@ -74,36 +113,53 @@ function CalificarTareaPage() {
               <tbody>
                 {entregas.length > 0 ? (
                   entregas.map((entrega) => (
-                    <tr key={entrega.estudiante_id} className="hover:bg-gray-100">
+                    <tr key={entrega.id} className="hover:bg-gray-100">
                       <td className="border border-gray-300 px-4 py-2 text-center">
-                        {entrega.estudiante_nombre || 'Sin nombre'}
+                        {entrega.estudiante.name || 'Sin nombre'}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center">
                         {entrega.archivo ? (
-                          <a
-                            href={entrega.archivo}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => handleDownload(entrega.archivo)}
                             className="text-blue-500 underline"
                           >
                             Ver Archivo
-                          </a>
+                          </button>
                         ) : (
                           <span className="text-red-500">No ha subido tarea</span>
                         )}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.5"
-                          value={notas[entrega.estudiante_id] || ''}
-                          onChange={(e) =>
-                            handleNotaChange(entrega.estudiante_id, e.target.value)
-                          }
-                          className="border rounded px-2 py-1 w-20 text-center"
-                        />
+                        {editable[entrega.id] ? (
+                          <div className="flex items-center justify-center space-x-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="20"
+                              step="0.5"
+                              value={notas[entrega.id] || ''}
+                              onChange={(e) =>
+                                handleNotaChange(entrega.id, e.target.value)
+                              }
+                              className="border rounded px-2 py-1 w-20 text-center"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center space-x-2">
+                            <input
+                              type="number"
+                              value={notas[entrega.id] || ''}
+                              disabled
+                              className="border rounded px-2 py-1 w-20 text-center bg-gray-100"
+                            />
+                            <button
+                              onClick={() => handleEditarNota(entrega.id)}
+                              className="text-blue-500 underline"
+                            >
+                              Editar
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))

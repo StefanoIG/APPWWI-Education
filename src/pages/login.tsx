@@ -46,6 +46,13 @@ const Login: React.FC = () => {
       // Guardar el token en el almacenamiento local
       localStorage.setItem('token', token);
       localStorage.setItem('rol', rol);
+      //dependiendo del rol guardar el id como id_estudiante o id_profesor
+      if(rol === 'estudiante'){
+        localStorage.setItem('id_estudiante', response.data.id);
+      }
+      if(rol === 'profesor'){
+        localStorage.setItem('id_profesor', response.data.id);
+      }
 
       // Mostrar notificación de éxito
       MySwal.fire({

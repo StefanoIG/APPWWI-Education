@@ -35,6 +35,13 @@ function TareasPage() {
     navigate('/tareas/agregar'); // Redirige a una página para agregar tareas
   };
 
+  //Funcion para ir a ver las calificaciones
+  const handleCalificaciones = () => {
+    navigate('/calificaciones');
+  };
+
+
+
   const handleVistaPrevia = (tareaId) => {
     // Redirige a la página de detalle de la tarea pasando el ID de la tarea
     navigate(`/tareas/${tareaId}`);
@@ -42,7 +49,7 @@ function TareasPage() {
 
   const handleAgregarEntrega = (tareaId) => {
     // Redirige a la página de agregar entrega pasando el ID de la tarea
-    navigate(`/tareas/${tareaId}/entregar`);
+    navigate(`/tareas/${tareaId}`);
   };
 
   useEffect(() => {
@@ -59,14 +66,22 @@ function TareasPage() {
 
   return (
     <div className="h-full w-full flex overflow-hidden antialiased text-gray-800 bg-white">
-      
+
       <div className="flex-1 flex flex-col">
         <Navbar />
-          <br />
-          <br />
+        <br />
+        <br />
         <main className="flex-grow flex flex-col min-h-0 border-t">
+
           <section aria-label="main content" className="p-6">
+
             <div className="flex justify-between items-center mb-4">
+              <button
+                onClick={handleCalificaciones}
+                className="px-4 py-2 bg-green-600 text-white rounded-md shadow-md hover:bg-green-700"
+              >
+                Calificaciones
+              </button>
               <h2 className="text-2xl font-semibold">Lista de Tareas</h2>
               {rol === 'profesor' && (
                 <button
@@ -77,6 +92,7 @@ function TareasPage() {
                 </button>
               )}
             </div>
+
             {tareas.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tareas.map((tarea) => (
@@ -86,12 +102,10 @@ function TareasPage() {
                     className="border rounded-lg p-4 bg-gray-100 shadow-md"
                   >
                     <h3 className="text-lg font-bold">{tarea.titulo}</h3>
-                    <p className="mt-2 text-sm text-gray-600">{tarea.descripcion}</p>
-                    <p className="mt-2 text-sm">
-                      <strong>Estado:</strong> {tarea.estado}
-                    </p>
+                    <p className="mt-2 text-sm text-gray-600"><strong>Descripcion de la tarea: </strong>{tarea.descripcion}</p>
+                   
                     <p className="mt-1 text-sm">
-                      <strong>Fecha de entrega:</strong> {tarea.fechaEntrega}
+                      <strong>Fecha de entrega:</strong> {tarea.fecha_entrega}
                     </p>
                     {rol === 'profesor' ? (
                       <button
